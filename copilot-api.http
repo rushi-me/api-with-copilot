@@ -9,7 +9,15 @@ Accept: application/json
 GET {{copilot_api_HostAddress}}/api/users/1
 Accept: application/json
 
-### Create a new user
+### Get user by invalid ID
+GET {{copilot_api_HostAddress}}/api/users/0
+Accept: application/json
+
+### Get non-existent user
+GET {{copilot_api_HostAddress}}/api/users/999
+Accept: application/json
+
+### Create a new user (valid)
 POST {{copilot_api_HostAddress}}/api/users
 Content-Type: application/json
 
@@ -21,7 +29,42 @@ Content-Type: application/json
   "isActive": true
 }
 
-### Update user
+### Create user with invalid email
+POST {{copilot_api_HostAddress}}/api/users
+Content-Type: application/json
+
+{
+  "firstName": "Bob",
+  "lastName": "Wilson",
+  "email": "invalid-email",
+  "department": "Sales",
+  "isActive": true
+}
+
+### Create user with duplicate email
+POST {{copilot_api_HostAddress}}/api/users
+Content-Type: application/json
+
+{
+  "firstName": "Charlie",
+  "lastName": "Brown",
+  "email": "john.doe@company.com",
+  "department": "Engineering",
+  "isActive": true
+}
+
+### Create user with missing required fields
+POST {{copilot_api_HostAddress}}/api/users
+Content-Type: application/json
+
+{
+  "firstName": "David",
+  "lastName": "",
+  "email": "david@company.com",
+  "department": "Marketing"
+}
+
+### Update user (valid)
 PUT {{copilot_api_HostAddress}}/api/users/1
 Content-Type: application/json
 
@@ -33,5 +76,41 @@ Content-Type: application/json
   "isActive": true
 }
 
+### Update user with invalid ID
+PUT {{copilot_api_HostAddress}}/api/users/0
+Content-Type: application/json
+
+{
+  "firstName": "John",
+  "lastName": "Doe",
+  "email": "john.doe@company.com",
+  "department": "Engineering",
+  "isActive": true
+}
+
+### Update non-existent user
+PUT {{copilot_api_HostAddress}}/api/users/999
+Content-Type: application/json
+
+{
+  "firstName": "John",
+  "lastName": "Doe",
+  "email": "john.doe@company.com",
+  "department": "Engineering",
+  "isActive": true
+}
+
 ### Delete user
-DELETE {{copilot_api_HostAddress}}/api/users/2
+DELETE {{copilot_api_HostAddress}}/api/users/3
+
+### Delete non-existent user
+DELETE {{copilot_api_HostAddress}}/api/users/999
+
+### Check email uniqueness (unique)
+GET {{copilot_api_HostAddress}}/api/users/check-email?email=new.email@company.com
+
+### Check email uniqueness (duplicate)
+GET {{copilot_api_HostAddress}}/api/users/check-email?email=jane.smith@company.com
+
+### Check email uniqueness (same user - should be unique)
+GET {{copilot_api_HostAddress}}/api/users/check-email?email=john.doe@company.com&excludeUserId=1

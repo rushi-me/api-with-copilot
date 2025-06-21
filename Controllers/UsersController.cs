@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using copilot_api.Models;
 using copilot_api.Services;
+using Microsoft.Extensions.Logging;
 
 namespace copilot_api.Controllers;
 
@@ -9,72 +10,225 @@ namespace copilot_api.Controllers;
 public class UsersController : ControllerBase
 {
     private readonly IUserService _userService;
+    private readonly ILogger<UsersController> _logger;
 
-    public UsersController(IUserService userService)
+    public UsersController(IUserService userService, ILogger<UsersController> logger)
     {
         _userService = userService;
+        _logger = logger;
     }
 
-    // GET: api/users
+    /// <summary>
+    /// Get all users
+    /// </summary>
+    /// <returns>List of all users</returns>
     [HttpGet]
-    public ActionResult<IEnumerable<User>> GetUsers()
+    [ProducesResponseType(typeof(IEnumerable<UserResponseDto>), 200)]
+    public ActionResult<IEnumerable<UserResponseDto>> GetUsers()
     {
-        var users = _userService.GetAllUsers();
-        return Ok(users);
+        try
+        {
+            var users = _userService.GetAllUsers();
+            var response = users.Select(MapToResponseDto);
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving users");
+            return StatusCode(500, "An error occurred while retrieving users");
+        }
     }
 
-    // GET: api/users/{id}
+    /// <summary>
+    /// Get user by ID
+    /// </summary>
+    /// <param name="id">User ID</param>
+    /// <returns>User details</returns>
     [HttpGet("{id}")]
-    public ActionResult<User> GetUser(int id)
+    [ProducesResponseType(typeof(UserResponseDto), 200)]
+    [ProducesResponseType(404)]
+    public ActionResult<UserResponseDto> GetUser(int id)
     {
-        var user = _userService.GetUserById(id);
-        if (user == null)
-            return NotFound();
+        try
+        {
+            if (id <= 0)
+            {
+                return BadRequest("Invalid user ID");
+            }
 
-        return Ok(user);
+            var user = _userService.GetUserById(id);
+            if (user == null)
+            {
+                return NotFound($"User with ID {id} not found");
+            }
+
+            return Ok(MapToResponseDto(user));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving user with ID {UserId}", id);
+            return StatusCode(500, "An error occurred while retrieving the user");
+        }
     }
 
-    // POST: api/users
+    /// <summary>
+    /// Create a new user
+    /// </summary>
+    /// <param name="userDto">User creation data</param>
+    /// <returns>Created user details</returns>
     [HttpPost]
-    public ActionResult<User> CreateUser(User user)
+    [ProducesResponseType(typeof(UserResponseDto), 201)]
+    [ProducesResponseType(400)]
+    public ActionResult<UserResponseDto> CreateUser(CreateUserDto userDto)
     {
-        if (string.IsNullOrWhiteSpace(user.FirstName) || 
-            string.IsNullOrWhiteSpace(user.LastName) || 
-            string.IsNullOrWhiteSpace(user.Email))
+        try
         {
-            return BadRequest("FirstName, LastName, and Email are required.");
-        }
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
 
-        var createdUser = _userService.CreateUser(user);
-        return CreatedAtAction(nameof(GetUser), new { id = createdUser.Id }, createdUser);
+            var (user, error) = _userService.CreateUser(userDto);
+            
+            if (error != null)
+            {
+                return BadRequest(new { error });
+            }
+
+            if (user == null)
+            {
+                return StatusCode(500, "Failed to create user");
+            }
+
+            var response = MapToResponseDto(user);
+            return CreatedAtAction(nameof(GetUser), new { id = user.Id }, response);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating user");
+            return StatusCode(500, "An error occurred while creating the user");
+        }
     }
 
-    // PUT: api/users/{id}
+    /// <summary>
+    /// Update an existing user
+    /// </summary>
+    /// <param name="id">User ID</param>
+    /// <param name="userDto">Updated user data</param>
+    /// <returns>Updated user details</returns>
     [HttpPut("{id}")]
-    public ActionResult<User> UpdateUser(int id, User user)
+    [ProducesResponseType(typeof(UserResponseDto), 200)]
+    [ProducesResponseType(400)]
+    [ProducesResponseType(404)]
+    public ActionResult<UserResponseDto> UpdateUser(int id, UpdateUserDto userDto)
     {
-        if (string.IsNullOrWhiteSpace(user.FirstName) || 
-            string.IsNullOrWhiteSpace(user.LastName) || 
-            string.IsNullOrWhiteSpace(user.Email))
+        try
         {
-            return BadRequest("FirstName, LastName, and Email are required.");
+            if (id <= 0)
+            {
+                return BadRequest("Invalid user ID");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var (user, error) = _userService.UpdateUser(id, userDto);
+            
+            if (error != null)
+            {
+                if (error.Contains("not found"))
+                {
+                    return NotFound($"User with ID {id} not found");
+                }
+                return BadRequest(new { error });
+            }
+
+            if (user == null)
+            {
+                return StatusCode(500, "Failed to update user");
+            }
+
+            return Ok(MapToResponseDto(user));
         }
-
-        var updatedUser = _userService.UpdateUser(id, user);
-        if (updatedUser == null)
-            return NotFound();
-
-        return Ok(updatedUser);
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating user with ID {UserId}", id);
+            return StatusCode(500, "An error occurred while updating the user");
+        }
     }
 
-    // DELETE: api/users/{id}
+    /// <summary>
+    /// Delete a user
+    /// </summary>
+    /// <param name="id">User ID</param>
+    /// <returns>No content on success</returns>
     [HttpDelete("{id}")]
+    [ProducesResponseType(204)]
+    [ProducesResponseType(404)]
     public ActionResult DeleteUser(int id)
     {
-        var deleted = _userService.DeleteUser(id);
-        if (!deleted)
-            return NotFound();
+        try
+        {
+            if (id <= 0)
+            {
+                return BadRequest("Invalid user ID");
+            }
 
-        return NoContent();
+            var deleted = _userService.DeleteUser(id);
+            if (!deleted)
+            {
+                return NotFound($"User with ID {id} not found");
+            }
+
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting user with ID {UserId}", id);
+            return StatusCode(500, "An error occurred while deleting the user");
+        }
+    }
+
+    /// <summary>
+    /// Check if email is unique
+    /// </summary>
+    /// <param name="email">Email to check</param>
+    /// <param name="excludeUserId">User ID to exclude from check (for updates)</param>
+    /// <returns>Email uniqueness status</returns>
+    [HttpGet("check-email")]
+    [ProducesResponseType(typeof(object), 200)]
+    public ActionResult CheckEmailUniqueness([FromQuery] string email, [FromQuery] int? excludeUserId = null)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                return BadRequest("Email is required");
+            }
+
+            var isUnique = _userService.IsEmailUnique(email, excludeUserId);
+            return Ok(new { email, isUnique });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error checking email uniqueness for {Email}", email);
+            return StatusCode(500, "An error occurred while checking email uniqueness");
+        }
+    }
+
+    private static UserResponseDto MapToResponseDto(User user)
+    {
+        return new UserResponseDto
+        {
+            Id = user.Id,
+            FirstName = user.FirstName,
+            LastName = user.LastName,
+            Email = user.Email,
+            Department = user.Department,
+            CreatedAt = user.CreatedAt,
+            IsActive = user.IsActive
+        };
     }
 } 

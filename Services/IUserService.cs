@@ -6,7 +6,9 @@ public interface IUserService
 {
     IEnumerable<User> GetAllUsers();
     User? GetUserById(int id);
-    User CreateUser(User user);
-    User? UpdateUser(int id, User user);
+    User? GetUserByEmail(string email);
+    (User? user, string? error) CreateUser(CreateUserDto userDto);
+    (User? user, string? error) UpdateUser(int id, UpdateUserDto userDto);
     bool DeleteUser(int id);
+    bool IsEmailUnique(string email, int? excludeUserId = null);
 } 
