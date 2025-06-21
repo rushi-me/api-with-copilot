@@ -1,6 +1,37 @@
 @copilot_api_HostAddress = http://localhost:5225
 
-GET {{copilot_api_HostAddress}}/weatherforecast/
+
+### Get all users
+GET {{copilot_api_HostAddress}}/api/users
 Accept: application/json
 
-###
+### Get user by ID
+GET {{copilot_api_HostAddress}}/api/users/1
+Accept: application/json
+
+### Create a new user
+POST {{copilot_api_HostAddress}}/api/users
+Content-Type: application/json
+
+{
+  "firstName": "Alice",
+  "lastName": "Johnson",
+  "email": "alice.johnson@company.com",
+  "department": "HR",
+  "isActive": true
+}
+
+### Update user
+PUT {{copilot_api_HostAddress}}/api/users/1
+Content-Type: application/json
+
+{
+  "firstName": "John",
+  "lastName": "Doe",
+  "email": "john.doe.updated@company.com",
+  "department": "Engineering",
+  "isActive": true
+}
+
+### Delete user
+DELETE {{copilot_api_HostAddress}}/api/users/2
