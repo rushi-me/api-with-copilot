@@ -1,25 +1,31 @@
 @copilot_api_HostAddress = http://localhost:5225
+@apiKey = xk9m2n8p4q7r3s5t1v6w
 
 
 ### Get all users
 GET {{copilot_api_HostAddress}}/api/users
 Accept: application/json
+X-API-Key: {{apiKey}}
 
 ### Get user by ID
 GET {{copilot_api_HostAddress}}/api/users/1
 Accept: application/json
+X-API-Key: {{apiKey}}
 
 ### Get user by invalid ID
 GET {{copilot_api_HostAddress}}/api/users/0
 Accept: application/json
+X-API-Key: {{apiKey}}
 
 ### Get non-existent user
 GET {{copilot_api_HostAddress}}/api/users/999
 Accept: application/json
+X-API-Key: {{apiKey}}
 
 ### Create a new user (valid)
 POST {{copilot_api_HostAddress}}/api/users
 Content-Type: application/json
+X-API-Key: {{apiKey}}
 
 {
   "firstName": "Alice",
@@ -32,6 +38,7 @@ Content-Type: application/json
 ### Create user with invalid email
 POST {{copilot_api_HostAddress}}/api/users
 Content-Type: application/json
+X-API-Key: {{apiKey}}
 
 {
   "firstName": "Bob",
@@ -44,6 +51,7 @@ Content-Type: application/json
 ### Create user with duplicate email
 POST {{copilot_api_HostAddress}}/api/users
 Content-Type: application/json
+X-API-Key: {{apiKey}}
 
 {
   "firstName": "Charlie",
@@ -56,6 +64,7 @@ Content-Type: application/json
 ### Create user with missing required fields
 POST {{copilot_api_HostAddress}}/api/users
 Content-Type: application/json
+X-API-Key: {{apiKey}}
 
 {
   "firstName": "David",
@@ -67,6 +76,7 @@ Content-Type: application/json
 ### Update user (valid)
 PUT {{copilot_api_HostAddress}}/api/users/1
 Content-Type: application/json
+X-API-Key: {{apiKey}}
 
 {
   "firstName": "John",
@@ -79,6 +89,7 @@ Content-Type: application/json
 ### Update user with invalid ID
 PUT {{copilot_api_HostAddress}}/api/users/0
 Content-Type: application/json
+X-API-Key: {{apiKey}}
 
 {
   "firstName": "John",
@@ -91,6 +102,7 @@ Content-Type: application/json
 ### Update non-existent user
 PUT {{copilot_api_HostAddress}}/api/users/999
 Content-Type: application/json
+X-API-Key: {{apiKey}}
 
 {
   "firstName": "John",
@@ -102,15 +114,33 @@ Content-Type: application/json
 
 ### Delete user
 DELETE {{copilot_api_HostAddress}}/api/users/3
+X-API-Key: {{apiKey}}
 
 ### Delete non-existent user
 DELETE {{copilot_api_HostAddress}}/api/users/999
+X-API-Key: {{apiKey}}
 
 ### Check email uniqueness (unique)
 GET {{copilot_api_HostAddress}}/api/users/check-email?email=new.email@company.com
+X-API-Key: {{apiKey}}
 
 ### Check email uniqueness (duplicate)
 GET {{copilot_api_HostAddress}}/api/users/check-email?email=jane.smith@company.com
+X-API-Key: {{apiKey}}
 
 ### Check email uniqueness (same user - should be unique)
 GET {{copilot_api_HostAddress}}/api/users/check-email?email=john.doe@company.com&excludeUserId=1
+X-API-Key: {{apiKey}}
+
+### Test authentication - Missing API key
+GET {{copilot_api_HostAddress}}/api/users
+Accept: application/json
+
+### Test authentication - Invalid API key
+GET {{copilot_api_HostAddress}}/api/users
+Accept: application/json
+X-API-Key: invalid-api-key
+
+### Test Swagger access (should work without API key)
+GET {{copilot_api_HostAddress}}/swagger
+Accept: application/json
